@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Encaminhamento de Documentos</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0ede8;
+    --surface: #faf8f5;
+    --border: #d8d3cc;
+    --accent: #1a4a6b;
+    --accent-light: #e8f0f7;
+    --accent-mid: #2d6a9f;
+    --text: #1c1a18;
+    --muted: #7a7570;
+    --tag-bg: #ddeaf5;
+    --tag-text: #1a4a6b;
+    --highlight: #c9e2f7;
+    --green: #2d6e4e;
+    --green-bg: #e8f5ef;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+
+  .wrapper {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  header {
+    margin-bottom: 2.5rem;
+  }
+
+  .eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+
+  h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--accent);
+    line-height: 1.2;
+  }
+
+  .subtitle {
+    margin-top: 0.4rem;
+    font-size: 0.9rem;
+    color: var(--muted);
+    font-weight: 300;
+  }
+
+  .search-box {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .search-box:focus-within {
+    border-color: var(--accent-mid);
+    box-shadow: 0 0 0 3px var(--highlight);
+  }
+
+  .search-icon {
+    color: var(--muted);
+    flex-shrink: 0;
+    font-size: 1.1rem;
+  }
+
+  #searchInput {
+    border: none;
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    color: var(--text);
+    flex: 1;
+    outline: none;
+  }
+
+  #searchInput::placeholder { color: var(--muted); }
+
+  #clearBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 1rem;
+    padding: 0.2rem;
+    display: none;
+  }
+
+  #clearBtn:hover { color: var(--text); }
+
+  .results-header {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.75rem;
+  }
+
+  .result-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 0.75rem;
+    animation: fadeIn 0.2s ease;
+    transition: border-color 0.15s;
+  }
+
+  .result-card:hover { border-color: var(--accent-mid); }
+
+  .result-card.top-match {
+    border-color: var(--accent-mid);
+    background: var(--accent-light);
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .sigla-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 500;
+    background: var(--accent);
+    color: #fff;
+    padding: 0.25rem 0.65rem;
+    border-radius: 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .top-match .sigla-badge {
+    background: var(--accent-mid);
+  }
+
+  .org-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--accent);
+    line-height: 1.3;
+  }
+
+  .card-desc {
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.5;
+    margin-top: 0.25rem;
+  }
+
+  mark {
+    background: var(--highlight);
+    color: var(--accent);
+    border-radius: 3px;
+    padding: 0 2px;
+  }
+
+  .no-results {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--muted);
+  }
+
+  .no-results .icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+  .no-results p { font-size: 0.9rem; }
+
+  .all-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .all-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.7rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .all-item:hover {
+    background: var(--accent-light);
+    border-color: var(--accent-mid);
+  }
+
+  .all-item .sigla-small {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    background: var(--tag-bg);
+    color: var(--tag-text);
+    padding: 0.2rem 0.5rem;
+    border-radius: 5px;
+    white-space: nowrap;
+  }
+
+  .all-item .name-small {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2rem 0 1.25rem;
+  }
+
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.9rem;
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <header>
+    <div class="eyebrow">Prefeitura Municipal</div>
+    <h1>Para onde encaminhar?</h1>
+    <p class="subtitle">Digite uma palavra-chave e descubra a secretaria responsável.</p>
+  </header>
+
+  <div class="search-box">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="searchInput" placeholder="Ex: buraco, lixo, árvore, escola, ônibus…" autocomplete="off" />
+    <button id="clearBtn" title="Limpar">✕</button>
+  </div>
+
+  <div id="resultsArea"></div>
+  <hr class="divider" id="dividerEl" style="display:none">
+  <div id="allLabel" class="section-label" style="display:none">Todos os órgãos</div>
+  <div id="allList" class="all-list"></div>
+</div>
+
+<script>
+const dados = [
+  {
+    sigla: "SMI/GAB",
+    nome: "Secretaria Municipal de Infraestrutura",
+    desc: "Manutenção, conserto, parquinho, praça, academia, deck, buraco, boca de lobo, bueiro, corrimão, manutenção e limpeza em geral das ruas, hidrojato, roçagem, drenagem, pavimentação, calçamento de rua, placa de trânsito, faixa de pedestres, pintura, ponto de ônibus, táxi, barco, ponto e horário de ônibus, lombada, faixa elevada, pedido de ônibus acima de 26 pessoas.",
+    keywords: ["buraco","praça","parquinho","academia","deck","bueiro","boca de lobo","corrimão","limpeza","rua","hidrojato","roçagem","drenagem","pavimentação","calçamento","placa","trânsito","faixa de pedestres","pintura","ônibus","táxi","barco","horário","lombada","faixa elevada","infraestrutura","manutenção","conserto"]
+  },
+  {
+    sigla: "SMC/GAB",
+    nome: "Secretaria Municipal do Continente",
+    desc: "Tudo relacionado ao continente.",
+    keywords: ["continente"]
+  },
+  {
+    sigla: "SMF/GAB",
+    nome: "Secretaria Municipal da Fazenda",
+    desc: "Assuntos financeiros e tributários do município.",
+    keywords: ["fazenda","tributo","imposto","financeiro","fiscal","nota fiscal","IPTU","ISS"]
+  },
+  {
+    sigla: "SMA/GAB",
+    nome: "Secretaria Municipal de Administração",
+    desc: "Gestão administrativa municipal.",
+    keywords: ["administração","administrativo","gestão","servidor","RH","recursos humanos","pessoal"]
+  },
+  {
+    sigla: "SMA/COSIP",
+    nome: "Secretaria Municipal de Administração — Iluminação",
+    desc: "Tudo relacionado à iluminação pública.",
+    keywords: ["iluminação","luz","poste","lâmpada","escuro","poste apagado","iluminação pública","COSIP"]
+  },
+  {
+    sigla: "SMCEL/GAB",
+    nome: "Secretaria Municipal de Cultura, Esporte e Lazer",
+    desc: "Banheiro químico, tendas, brinquedos, rede de campo/quadra (parque), micro ônibus até 25 pessoas.",
+    keywords: ["cultura","esporte","lazer","banheiro químico","tenda","brinquedo","rede de campo","quadra","parque","micro ônibus","evento","show","festival","teatro","música","dança"]
+  },
+  {
+    sigla: "SME/GAB",
+    nome: "Secretaria Municipal de Educação",
+    desc: "Tudo relacionado à Educação, creches, escolas públicas, intérprete de libras.",
+    keywords: ["educação","escola","creche","aluno","professor","matrícula","libras","intérprete","ensino","educacional","pedagógico","criança","pré-escola","fundamental"]
+  },
+  {
+    sigla: "SMMADS/GAB",
+    nome: "Secretaria Municipal do Meio Ambiente",
+    desc: "Lixeira, coletora de lixo, coletora de vidros, caminhão de lixo, limpeza de vala e rios, coleta de entulhos, ecopontos.",
+    keywords: ["lixo","lixeira","coleta","coletora","vidro","entulho","ecoponto","vala","rio","limpeza","resíduo","reciclagem","meio ambiente","ambiental","caminhão de lixo"]
+  },
+  {
+    sigla: "FLORAM/GAB",
+    nome: "Fundação Municipal do Meio Ambiente",
+    desc: "Poda de árvore, retirada de tronco, galhos e autorização de corte de árvores, placa proibido colocar lixo.",
+    keywords: ["árvore","poda","tronco","galho","corte","placa proibido lixo","arborização","floresta","floram","vegetação","raiz"]
+  },
+  {
+    sigla: "SMLCP/GAB",
+    nome: "Secretaria Municipal de Licitações e Parcerias",
+    desc: "Licitações, contratos e parcerias do município.",
+    keywords: ["licitação","contrato","parceria","pregão","edital","compras","fornecedor","convênio"]
+  },
+  {
+    sigla: "SMPHDU/GAB",
+    nome: "Secretaria Municipal de Planejamento, Habitação e Desenvolvimento Urbano",
+    desc: "Alvará, liberação de espaço público, autorização para eventos.",
+    keywords: ["alvará","espaço público","autorização","evento","planejamento","habitação","desenvolvimento urbano","obra","construção","urbanismo","licença","uso do solo"]
+  },
+  {
+    sigla: "SMS/GAB/ASSJUR",
+    nome: "Secretaria Municipal de Saúde",
+    desc: "Desratização, vigilância sanitária, DIBEA, vacinas, postos de saúde.",
+    keywords: ["saúde","desratização","vigilância sanitária","DIBEA","vacina","posto de saúde","médico","UBS","dengue","praga","rato","barata","mosquito","saúde pública"]
+  },
+  {
+    sigla: "SMSOP/GAB",
+    nome: "Secretaria Municipal de Segurança e Ordem Pública",
+    desc: "Fiscalização em geral, praia, terrenos baldios, terrenos privados, obras, fiscalização de ambulantes nas praias, segurança pública, câmera de segurança.",
+    keywords: ["segurança","ordem pública","fiscalização","praia","terreno baldio","terreno privado","obra irregular","ambulante","câmera","câmera de segurança","guarda","fiscalizar"]
+  },
+  {
+    sigla: "SMSOP/GMF",
+    nome: "Guarda Municipal",
+    desc: "Guarda Municipal — policiamento comunitário.",
+    keywords: ["guarda municipal","guarda","policiamento","ronda","patrulha","viatura","segurança pública"]
+  },
+  {
+    sigla: "SMTDI/GAB",
+    nome: "Secretaria Municipal de Turismo, Desenvolvimento Econômico e Inovação",
+    desc: "Tudo relacionado ao turismo, desenvolvimento econômico e inovação.",
+    keywords: ["turismo","turista","turístico","desenvolvimento econômico","inovação","empreendedorismo","negócio","comércio","economia"]
+  },
+  {
+    sigla: "CGM/GAB",
+    nome: "Controladoria Geral do Município",
+    desc: "Controle interno, auditoria, ouvidoria municipal.",
+    keywords: ["controladoria","controle","auditoria","transparência","ouvidoria","denúncia","irregularidade","CGM"]
+  },
+  {
+    sigla: "FCFFC",
+    nome: "Fundação Cultural Franklin Cascaes",
+    desc: "Pedido de boi de mamão e manifestações culturais.",
+    keywords: ["boi de mamão","cultura popular","folclore","manifestação cultural","franklin cascaes","fundação cultural","artesanato","patrimônio cultural"]
+  },
+  {
+    sigla: "FME",
+    nome: "Fundação Municipal de Esportes",
+    desc: "Esportes, competições e programas esportivos municipais.",
+    keywords: ["esporte","campeonato","competição","atletismo","futebol","natação","ginástica","FME","fundação de esportes","programa esportivo"]
+  },
+  {
+    sigla: "GAPRE/CG — PROTOCOLO",
+    nome: "Gabinete do Prefeito — SOMAR",
+    desc: "Gabinete do Prefeito, protocolo geral, SOMAR.",
+    keywords: ["prefeito","gabinete","protocolo","SOMAR","documento","ofício","solicitação formal"]
+  },
+  {
+    sigla: "GAPRE/ASSPP",
+    nome: "Gabinete do Prefeito — Assessoria de Pessoas com Deficiência",
+    desc: "Tudo relacionado a pessoas com deficiência.",
+    keywords: ["deficiência","PCD","pessoa com deficiência","acessibilidade","inclusão","cadeirante","deficiente","mobilidade reduzida"]
+  },
+  {
+    sigla: "PGM/GAB",
+    nome: "Procuradoria Geral do Município",
+    desc: "Representação jurídica do município.",
+    keywords: ["procuradoria","jurídico","processo","ação judicial","advogado","legal","judicial","PGM"]
+  },
+  {
+    sigla: "SEMAS/GAB",
+    nome: "Secretaria Municipal de Assistência Social",
+    desc: "CRAS, assistência social.",
+    keywords: ["assistência social","CRAS","vulnerabilidade","família","benefício","bolsa","social","pobreza","idoso","criança","CREAS"]
+  },
+  {
+    sigla: "SMCC",
+    nome: "Casa Civil",
+    desc: "Casa Civil — coordenação de governo.",
+    keywords: ["casa civil","coordenação","governo","SMCC","articulação"]
+  },
+  {
+    sigla: "SMCC/EMENDAS/IMPOSITIVAS",
+    nome: "Casa Civil — Emendas Impositivas",
+    desc: "Matheus — emendas impositivas.",
+    keywords: ["emenda","emenda impositiva","matheus","verba","recurso","câmara","vereador"]
+  }
+];
+
+function normalize(str) {
+  return str.toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ");
+}
+
+function highlight(text, query) {
+  if (!query) return text;
+  const re = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  return text.replace(re, '<mark>$1</mark>');
+}
+
+function score(item, q) {
+  const nq = normalize(q);
+  let s = 0;
+  if (normalize(item.sigla).includes(nq)) s += 10;
+  if (normalize(item.nome).includes(nq)) s += 8;
+  item.keywords.forEach(k => {
+    if (normalize(k) === nq) s += 6;
+    else if (normalize(k).includes(nq)) s += 3;
+  });
+  if (normalize(item.desc).includes(nq)) s += 2;
+  return s;
+}
+
+const input = document.getElementById('searchInput');
+const clearBtn = document.getElementById('clearBtn');
+const resultsArea = document.getElementById('resultsArea');
+const allList = document.getElementById('allList');
+const dividerEl = document.getElementById('dividerEl');
+const allLabel = document.getElementById('allLabel');
+
+function renderAll() {
+  allList.innerHTML = '';
+  dividerEl.style.display = 'block';
+  allLabel.style.display = 'block';
+  dados.forEach(item => {
+    const el = document.createElement('div');
+    el.className = 'all-item';
+    el.innerHTML = `<span class="sigla-small">${item.sigla}</span><span class="name-small">${item.nome}</span>`;
+    el.addEventListener('click', () => {
+      input.value = item.sigla;
+      handleSearch();
+    });
+    allList.appendChild(el);
+  });
+}
+
+function handleSearch() {
+  const q = input.value.trim();
+  clearBtn.style.display = q ? 'block' : 'none';
+
+  if (!q) {
+    resultsArea.innerHTML = '';
+    renderAll();
+    return;
+  }
+
+  const scored = dados.map(item => ({ item, s: score(item, q) }))
+    .filter(x => x.s > 0)
+    .sort((a, b) => b.s - a.s);
+
+  dividerEl.style.display = 'none';
+  allLabel.style.display = 'none';
+  allList.innerHTML = '';
+
+  if (scored.length === 0) {
+    resultsArea.innerHTML = `
+      <div class="no-results">
+        <div class="icon">🔎</div>
+        <p>Nenhum órgão encontrado para "<strong>${q}</strong>".<br>Tente outra palavra-chave.</p>
+      </div>`;
+    return;
+  }
+
+  resultsArea.innerHTML = `<div class="results-header">${scored.length} resultado${scored.length > 1 ? 's' : ''} encontrado${scored.length > 1 ? 's' : ''}</div>`;
+
+  scored.forEach(({ item }, i) => {
+    const card = document.createElement('div');
+    card.className = 'result-card' + (i === 0 ? ' top-match' : '');
+    const hDesc = highlight(item.desc, q);
+    const hNome = highlight(item.nome, q);
+    card.innerHTML = `
+      <div class="card-top">
+        <div class="org-name">${hNome}</div>
+        <span class="sigla-badge">${item.sigla}</span>
+      </div>
+      <div class="card-desc">${hDesc}</div>`;
+    resultsArea.appendChild(card);
+  });
+}
+
+input.addEventListener('input', handleSearch);
+clearBtn.addEventListener('click', () => { input.value = ''; handleSearch(); input.focus(); });
+
+renderAll();
+</script>
+</body>
+</html>
